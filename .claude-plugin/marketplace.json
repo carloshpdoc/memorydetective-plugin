@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "memorydetective-plugin",
+  "description": "iOS leak hunting and performance investigation. Bundles the memorydetective MCP server with a /perf-investigate skill — one-command install for Claude Code.",
+  "owner": {
+    "name": "Carlos Henrique",
+    "url": "https://github.com/carloshpdoc"
+  },
+  "plugins": [
+    {
+      "name": "memorydetective",
+      "source": "./plugins/memorydetective",
+      "description": "iOS leak hunting + performance investigation: 27 MCP tools, 33-pattern cycle classifier, /perf-investigate skill. Reads .memgraph + .trace files; classifies retain cycles; bridges to Swift source via SourceKit-LSP.",
+      "category": "development",
+      "homepage": "https://github.com/carloshpdoc/memorydetective"
+    }
+  ]
+}

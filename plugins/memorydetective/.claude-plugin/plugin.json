@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "memorydetective",
+  "version": "1.6.0",
+  "description": "iOS leak hunting + performance investigation. Reads .memgraph and .trace files, classifies retain cycles against a 33-pattern catalog (SwiftUI / Combine / Concurrency / UIKit / Core Animation / Core Data / Coordinator / RxSwift / Realm), captures fresh ones via xctrace and leaks(1), bridges to Swift source via SourceKit-LSP.",
+  "author": {
+    "name": "Carlos Henrique",
+    "url": "https://github.com/carloshpdoc"
+  },
+  "homepage": "https://github.com/carloshpdoc/memorydetective",
+  "repository": "https://github.com/carloshpdoc/memorydetective-plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "ios",
+    "swift",
+    "swiftui",
+    "memory-leak",
+    "retain-cycle",
+    "memgraph",
+    "xctrace",
+    "instruments",
+    "performance",
+    "mcp",
+    "claude-code"
+  ]
+}
