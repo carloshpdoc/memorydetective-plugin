@@ -4,6 +4,23 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.7.0] — 2026-05-03
+
+Tracks `memorydetective@1.7.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.6` to `^1.7`. SKILL.md updated to reference the new fields and tool the upstream server ships.
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.6` → `^1.7`. The `npx -y` resolver auto-pulls `memorydetective@1.7.x`.
+- `skills/perf-investigate/SKILL.md`:
+  - Catalog reference updated `33 → 34` patterns. Adds the `swiftdata.modelcontext-actor-cycle` row in the catalog summary.
+  - `classifyCycle` step in the memgraph-leak playbook now mentions the new `fixTemplate` field and instructs the agent to lift the Swift snippet as a starting point (adapt, don't paste).
+  - `verify-fix` playbook gains a trace-side path using `compareTracesByPattern` for hangs / animation-hitches / app-launch regressions.
+- `README.md`: tool count `27 → 28`, pattern count `33 → 34`, mention of the per-classification triple (`fixHint` + `staticAnalysisHint` + `fixTemplate`).
+
+### Notes
+
+- No breaking changes for users — the plugin install command is unchanged. Re-running `/plugin install memorydetective@memorydetective-plugin` (or the auto-update on session start) picks up the new constraint and SKILL content.
+
 ## [1.6.0] — 2026-05-03
 
 Initial public release of the Claude Code plugin wrapper for `memorydetective`.

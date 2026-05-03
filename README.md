@@ -12,9 +12,9 @@
 That's it. You get:
 
 - The `memorydetective` MCP server auto-registered (pulled from npm via `npx`)
-- A `/perf-investigate` skill for disciplined investigation
+- 28 MCP tools + a `/perf-investigate` skill for disciplined investigation
 - 5 slash commands (`/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`)
-- 33 cycle-pattern resources browsable at `memorydetective://patterns/{patternId}`
+- 34 cycle-pattern resources browsable at `memorydetective://patterns/{patternId}`, every classification carrying `fixHint` + `staticAnalysisHint` + `fixTemplate` (Swift before/after snippet)
 
 Full docs: [plugins/memorydetective/README.md](./plugins/memorydetective/README.md).
 
@@ -33,7 +33,7 @@ memorydetective-plugin/
 └── plugins/
     └── memorydetective/
         ├── .claude-plugin/
-        │   └── plugin.json        ← plugin manifest (v1.6.0)
+        │   └── plugin.json        ← plugin manifest (v1.7.0)
         ├── .mcp.json              ← MCP server registration (npx pulls from npm)
         ├── skills/
         │   └── perf-investigate/
@@ -45,7 +45,7 @@ memorydetective-plugin/
 
 ## Versioning
 
-Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.6.x` pulls `memorydetective@^1.6` via `npx`. Patch + minor server releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
+Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.7.x` pulls `memorydetective@^1.7` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
 
 ## Source
 

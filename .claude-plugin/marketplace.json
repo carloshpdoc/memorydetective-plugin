@@ -10,7 +10,7 @@
     {
       "name": "memorydetective",
       "source": "./plugins/memorydetective",
-      "description": "iOS leak hunting + performance investigation: 27 MCP tools, 33-pattern cycle classifier, /perf-investigate skill. Reads .memgraph + .trace files; classifies retain cycles; bridges to Swift source via SourceKit-LSP.",
+      "description": "iOS leak hunting + performance investigation: 28 MCP tools, 34-pattern cycle classifier with Swift fixTemplate snippets, compareTracesByPattern for CI gating, /perf-investigate skill. Reads .memgraph + .trace files; classifies retain cycles; bridges to Swift source via SourceKit-LSP.",
       "category": "development",
       "homepage": "https://github.com/carloshpdoc/memorydetective"
     }

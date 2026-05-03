@@ -46,11 +46,11 @@ If the user has a slash command available, you can also invoke the matching MCP 
    - Note the count of ROOT CYCLEs and the dominant class chain.
    - The response includes `suggestedNextCalls` — follow them.
 
-3. **`classifyCycle(path)`** — match against the 33-pattern catalog
+3. **`classifyCycle(path)`** — match against the 34-pattern catalog
    - Returns `primaryMatch` (highest-confidence pattern) + `allMatches` (everything that fired).
-   - Each match carries: `patternId`, `name`, `confidence` (high/medium/low), `fixHint` (textual fix direction), and `staticAnalysisHint` (which SwiftLint rule complements this OR explicit gap notice).
+   - Each match carries: `patternId`, `name`, `confidence` (high/medium/low), `fixHint` (textual fix direction), `staticAnalysisHint` (which SwiftLint rule complements this OR explicit gap notice), and `fixTemplate` (Swift before/after code snippet — adapt the type/method names to the user's codebase via the SourceKit-LSP tools).
    - **If `primaryMatch` is `null`:** the cycle is novel. Skip to step 4 with `findRetainers` to walk the chain manually.
-   - **If `primaryMatch.confidence === "high"`:** treat the `fixHint` as authoritative direction. Move to source location.
+   - **If `primaryMatch.confidence === "high"`:** treat the `fixHint` as authoritative direction. Lift the `fixTemplate` snippet as a starting point — DON'T paste it verbatim, adapt to the actual type/method names. Move to source location.
 
 4. **`findRetainers(path, className)`** OR **`reachableFromCycle(path, rootClassName)`**
    - `findRetainers` returns retain chain paths from a top-level node down to the named class. Useful when classifyCycle didn't fire.
@@ -106,12 +106,23 @@ If the user has a slash command available, you can also invoke the matching MCP 
 
 ## Playbook E — verify-fix
 
-**Symptom shape:** "I applied a fix, did the cycle go away?"
+**Symptom shape:** "I applied a fix, did the cycle/regression go away?"
+
+For **memgraph-side** verification (cycles):
 
 1. **`diffMemgraphs(before, after)`** — totals + class-count deltas + cycles new/gone/persisted.
 2. Look for the originally-classified cycle in `cycles.goneFromBefore`. If still in `cycles.persisted`, the fix didn't address the right capture — escalate.
 3. **`verifyFix(before, after, expectedPatternId)`** — for CI gating. Returns PASS/PARTIAL/FAIL per pattern + bytes freed.
 4. **`classifyCycle(after)`** — confirm no NEW patterns appeared.
+
+For **trace-side** verification (hangs / animation hitches / app launch):
+
+1. **`compareTracesByPattern(before, after, category)`** — same PASS/PARTIAL/FAIL shape but for `.trace` bundles. `category` is `hangs`, `animation-hitches`, or `app-launch`.
+2. Threshold semantics:
+   - `hangs` PASS when `after.longestMs <= hangsMaxLongestMs` (default 0 — must be zero hangs)
+   - `animation-hitches` PASS when `after.longestMs <= hitchesMaxLongestMs` (default 100ms — Apple's user-perceptible threshold)
+   - `app-launch` PASS when `after.totalMs <= appLaunchMaxTotalMs` (default 1000ms)
+3. **PARTIAL** = reduced from before but still above threshold. **FAIL** = same or worse.
 
 ## Common pitfalls — don't fall into these
 
@@ -122,7 +133,7 @@ If the user has a slash command available, you can also invoke the matching MCP 
 - **Fixing the wrong cycle.** If multiple ROOT CYCLEs exist, prioritize by `transitiveBytes` (added in v1.4) — the cycle that pins the most memory is the leverage. `analyzeMemgraph` returns this in `cycles[].transitiveBytes`.
 - **Skipping `verifyFix`.** A fix that "looked right" is not a fix until the diff confirms the cycle is gone. Especially before merging or closing the ticket.
 
-## Catalog reference (33 patterns)
+## Catalog reference (34 patterns)
 
 The classifier covers the leak families that account for ~95% of real-world iOS retain cycles. Browse the live catalog as MCP resources at `memorydetective://patterns/{patternId}` — every pattern has a markdown body with name, fix hint, and how to confirm via runtime evidence.
 
@@ -134,6 +145,7 @@ Categories:
 - **WebKit** — `WKUserContentController.add` script-message-handler, including the 3-link bridge cycle
 - **Core Animation** — `CAAnimation.delegate` strong-retain, custom `CALayer` subclass + non-UIView delegate
 - **Core Data** — `NSFetchedResultsController.delegate`
+- **SwiftData** — `ModelContext` + `Actor` cycle through `DefaultSerialModelExecutor` (FB13844786, fixed iOS 18 beta 1)
 - **Coordinator pattern** — child holding parent strongly
 - **RxSwift** — DisposeBag + method reference trap
 - **Realm** — `NotificationToken` + change closure

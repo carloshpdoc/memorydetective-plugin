@@ -6,11 +6,11 @@
 
 When installed, this plugin auto-registers the `memorydetective` MCP server and adds a top-level skill:
 
-- **27 MCP tools** — `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
-- **33 cycle patterns** in the classifier — SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit, Core Animation, Core Data, Coordinator pattern, RxSwift, Realm
-- **`staticAnalysisHint` field** on every classification — bridges runtime evidence to SwiftLint rules (`weak_self`, `weak_delegate`) or surfaces explicit gaps
+- **28 MCP tools** — `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `compareTracesByPattern` (new in v1.7), `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
+- **34 cycle patterns** in the classifier — SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit, Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
+- **Per-classification triple** — every cycle now ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this — or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, new in v1.7)
 - **5 MCP prompts** as slash commands — `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`
-- **33 catalog resources** browsable at `memorydetective://patterns/{patternId}` — read the catalog without burning a tool call
+- **34 catalog resources** browsable at `memorydetective://patterns/{patternId}` — read the catalog without burning a tool call
 - **`/perf-investigate` skill** — disciplined investigation playbook routing to the right tools based on symptoms
 
 ## Install
@@ -57,7 +57,7 @@ The agent will pick the right tool chain.
 
 ## Versioning
 
-This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.6` via `npx -y`, so any 1.6.x or 1.7.x patch/minor release is auto-resolved on first run.
+This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.7` via `npx -y`, so any 1.7.x patch/minor release is auto-resolved on first run.
 
 When the MCP server bumps to a new major (e.g. `2.0.0`), this plugin will publish a matching plugin version with the updated constraint.
 
