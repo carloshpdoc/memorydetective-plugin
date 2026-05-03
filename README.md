@@ -1,6 +1,6 @@
 # memorydetective-plugin
 
-> Claude Code plugin marketplace for [memorydetective](https://github.com/carloshpdoc/memorydetective) — iOS leak hunting + performance investigation as a one-command install.
+> Claude Code plugin marketplace for [memorydetective](https://github.com/carloshpdoc/memorydetective): iOS leak hunting + performance investigation as a one-command install.
 
 ## Install
 
@@ -20,7 +20,7 @@ Full docs: [plugins/memorydetective/README.md](./plugins/memorydetective/README.
 
 ## Why a plugin AND an npm package?
 
-Both are first-class. Plugin is for Claude Code's native UX (zero-friction install + slash commands). The npm package is universal — install it directly to use with Cursor, Cline, Claude Desktop, Continue, or any MCP-compatible client.
+Both are first-class. Plugin is for Claude Code's native UX (zero-friction install + slash commands). The npm package is universal: install it directly to use with Cursor, Cline, Claude Desktop, Continue, or any MCP-compatible client.
 
 The plugin wraps the npm package; it doesn't fork it. Single source of truth on npm, single repo for code.
 

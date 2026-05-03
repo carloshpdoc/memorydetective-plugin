@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "memorydetective-plugin",
-  "description": "iOS leak hunting and performance investigation. Bundles the memorydetective MCP server with a /perf-investigate skill — one-command install for Claude Code.",
+  "description": "iOS leak hunting and performance investigation. Bundles the memorydetective MCP server with a /perf-investigate skill. One-command install for Claude Code.",
   "owner": {
     "name": "Carlos Henrique",
     "url": "https://github.com/carloshpdoc"

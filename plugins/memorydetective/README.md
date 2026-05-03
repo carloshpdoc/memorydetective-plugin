@@ -6,12 +6,12 @@
 
 When installed, this plugin auto-registers the `memorydetective` MCP server and adds a top-level skill:
 
-- **28 MCP tools** — `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `compareTracesByPattern` (new in v1.7), `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
-- **34 cycle patterns** in the classifier — SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit, Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
-- **Per-classification triple** — every cycle now ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this — or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, new in v1.7)
-- **5 MCP prompts** as slash commands — `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`
-- **34 catalog resources** browsable at `memorydetective://patterns/{patternId}` — read the catalog without burning a tool call
-- **`/perf-investigate` skill** — disciplined investigation playbook routing to the right tools based on symptoms
+- **28 MCP tools**: `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `compareTracesByPattern` (new in v1.7), `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
+- **34 cycle patterns** in the classifier: SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit, Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
+- **Per-classification triple**: every cycle now ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this, or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, new in v1.7)
+- **5 MCP prompts** as slash commands: `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`
+- **34 catalog resources** browsable at `memorydetective://patterns/{patternId}`, so an agent can read the catalog without burning a tool call
+- **`/perf-investigate` skill**: disciplined investigation playbook routing to the right tools based on symptoms
 
 ## Install
 
@@ -63,7 +63,7 @@ When the MCP server bumps to a new major (e.g. `2.0.0`), this plugin will publis
 
 See the upstream [CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for what's in each release.
 
-## Both surfaces — npm and plugin — are first-class
+## Both surfaces (npm and plugin) are first-class
 
 This plugin wraps the MCP server; it doesn't replace it. If you don't use Claude Code, install via npm directly:
 
