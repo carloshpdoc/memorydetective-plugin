@@ -53,6 +53,10 @@ Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.7.x` pul
 - MCP server: https://github.com/carloshpdoc/memorydetective
 - npm: https://www.npmjs.com/package/memorydetective
 
+## Privacy
+
+memorydetective runs entirely on your machine. The MCP server is launched locally via `npx`, processes `.memgraph` and `.trace` files from your disk, and shells out to local tools (`xcrun`, `sourcekit-lsp`). No telemetry, no analytics, no data leaves your machine.
+
 ## License
 
 Apache-2.0. See [LICENSE](./LICENSE).
