@@ -6,7 +6,7 @@
 
 When installed, this plugin auto-registers the `memorydetective` MCP server and adds a top-level skill:
 
-- **28 MCP tools**: `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `compareTracesByPattern` (new in v1.7), `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
+- **31 MCP tools**: `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `compareTracesByPattern`, `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, the v1.8 verify-fix trio (`bootAndLaunchForLeakInvestigation`, `replayScenario`, `captureScenarioState`) for the macOS 26.x `leaks --outputGraph` regression plus deterministic before/after snapshots, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
 - **34 cycle patterns** in the classifier: SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit, Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
 - **Per-classification triple**: every cycle now ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this, or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, new in v1.7)
 - **5 MCP prompts** as slash commands: `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`
@@ -20,7 +20,7 @@ When installed, this plugin auto-registers the `memorydetective` MCP server and 
 /plugin install memorydetective@memorydetective-plugin
 ```
 
-That's it. The MCP server is pulled from npm (`memorydetective@^1.6`) on first use.
+That's it. The MCP server is pulled from npm (`memorydetective@^1.8`) on first use.
 
 ## Use
 

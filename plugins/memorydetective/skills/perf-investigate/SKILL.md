@@ -167,14 +167,17 @@ Read & analyze (13)
 Capture / record (3)
   recordTimeProfile, captureMemgraph, logStream
 
+Verify-fix orchestration (3, v1.8)
+  bootAndLaunchForLeakInvestigation, replayScenario, captureScenarioState
+
 Discover (2)
   listTraceDevices, listTraceTemplates
 
 Render (1)
   renderCycleGraph (Mermaid + Graphviz DOT)
 
-CI / test integration (1)
-  detectLeaksInXCUITest (experimental)
+CI / test integration (2)
+  detectLeaksInXCUITest (experimental), compareTracesByPattern
 
 Swift source bridging (5)
   swiftGetSymbolDefinition, swiftFindSymbolReferences, swiftGetSymbolsOverview,
@@ -186,4 +189,25 @@ Pipeline awareness (1, meta)
 
 Plus 5 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`.
 
-Plus 33 catalog resources at `memorydetective://patterns/{patternId}`.
+Plus 34 catalog resources at `memorydetective://patterns/{patternId}`.
+
+## When `captureMemgraph` fails on macOS 26.x
+
+Apple regressed `leaks --outputGraph` on macOS 26.x: it aborts with `Failed to get DYLD info for task` whenever the target was not launched with `MallocStackLogging=1`. As of v1.8 the plugin handles this end to end.
+
+1. **Detect.** `captureMemgraph` returns `ok: false` with `workaroundNotice.issue === "minimal-corpse"`. The result also carries `suggestedNextCalls` pointing at the `recordTimeProfile` (Allocations) fallback.
+2. **Recover via relaunch (preferred).** Call `bootAndLaunchForLeakInvestigation({ workspace, scheme, simulator: { name: "iPhone 15" } })`. It builds, boots, installs, and launches with `MallocStackLogging=1` propagated via `SIMCTL_CHILD_*`, and returns the host PID + simulator UDID. Re-call `captureMemgraph` with that PID.
+3. **Fallback if relaunch is unavailable.** If you cannot rebuild the project (e.g. the user only has the running app), follow `suggestedNextCalls` to record an Allocations trace and inspect with `analyzeAllocations`. Or fall back to Xcode manual export: Debug -> View Memory Graph Hierarchy -> File -> Export Memory Graph, then pass the resulting `.memgraph` to `analyzeMemgraph`.
+
+`getInvestigationPlaybook({ kind: "memgraph-leak" })` carries a `troubleshooting` field documenting these paths inline so you can branch deterministically.
+
+## Verify-fix loop (v1.8)
+
+When the user wants deterministic before/after evidence (typical after a refactor or a SwiftUI cycle fix):
+
+1. **Set up the scenario.** Call `bootAndLaunchForLeakInvestigation` to get a clean process with `MallocStackLogging=1`.
+2. **Amplify the suspected leak.** Call `replayScenario({ simulatorUDID, actions: [...], repeat: 5 })` to drive the UI through the leaking flow N times. Tap targets accept `label`, `elementId`, or `coords`. Soft dependency on Cameron Cooke's [axe](https://github.com/cameroncooke/AXe) CLI; the tool returns a structured install hint when missing.
+3. **Capture before.** Call `captureScenarioState({ simulatorUDID, pid, outputDir, label: "before" })`. Writes `before.memgraph`, `before.png`, `before.ui.json`.
+4. **User ships the fix and rebuilds.**
+5. **Capture after.** Repeat steps 1-3 with `label: "after"`.
+6. **Verdict.** Call `diffMemgraphs(before.memgraph, after.memgraph)` then `verifyFix(before, after, expectedPatternId: "<pattern>")`. Returns PASS / PARTIAL / FAIL with bytes freed.

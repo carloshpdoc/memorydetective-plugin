@@ -4,7 +4,27 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
-## [1.7.0] — 2026-05-03
+## [1.8.0] - 2026-05-06
+
+Tracks `memorydetective@1.8.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.7` to `^1.8`. SKILL.md gains the macOS 26.x troubleshooting workflow plus the new verify-fix orchestration playbook (bootAndLaunchForLeakInvestigation -> replayScenario -> captureScenarioState -> diffMemgraphs).
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.7` -> `^1.8`. The `npx -y` resolver auto-pulls `memorydetective@1.8.x`.
+- `skills/perf-investigate/SKILL.md`:
+  - Tooling summary updated: 28 -> 31 tools. New "Verify-fix orchestration (3)" section listing `bootAndLaunchForLeakInvestigation`, `replayScenario`, `captureScenarioState`. CI / test integration count fixed `1 -> 2` (compareTracesByPattern was stale at v1.7).
+  - Memgraph-leak playbook gains a "When capture fails on macOS 26.x" branch: detect `workaroundNotice.issue === "minimal-corpse"`, then call `bootAndLaunchForLeakInvestigation` with `MallocStackLogging=1` to relaunch and retry, fall back to Xcode manual export if the relaunch path is unavailable.
+  - Verify-fix playbook gains the canonical loop using the new tools: `bootAndLaunchForLeakInvestigation` -> `replayScenario(repeat: 5)` -> `captureScenarioState(label: "before")` -> ship fix -> repeat -> `diffMemgraphs`.
+  - Catalog resources count updated 33 -> 34 (was stale).
+- `README.md`: tool count `28 -> 31`, mention of the new macOS 26.x fix and verify-fix loop.
+- `.claude-plugin/plugin.json` description: refreshed for v1.8.0 capabilities.
+- `.claude-plugin/marketplace.json` plugin description: refreshed for v1.8.0 capabilities.
+
+### Notes
+
+- No breaking changes for users. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the new constraint and SKILL content.
+
+## [1.7.0] - 2026-05-03
 
 Tracks `memorydetective@1.7.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.6` to `^1.7`. SKILL.md updated to reference the new fields and tool the upstream server ships.
 
