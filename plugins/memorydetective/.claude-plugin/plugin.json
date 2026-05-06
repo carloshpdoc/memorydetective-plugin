@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "memorydetective",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "iOS leak hunting + performance investigation. Reads .memgraph and .trace files, classifies retain cycles against a 34-pattern catalog (SwiftUI / Combine / Concurrency / UIKit / Core Animation / Core Data / SwiftData / Coordinator / RxSwift / Realm). Every classification ships with a Swift fixTemplate snippet you can adapt directly. Single-call build + boot + launch with MallocStackLogging fixes the macOS 26.x leaks --outputGraph regression; replayScenario + captureScenarioState close the verify-fix loop. Captures fresh memgraphs/traces via xctrace and leaks(1), bridges to Swift source via SourceKit-LSP. 31 MCP tools, 34 catalog resources, 5 investigation prompts.",
   "author": {
     "name": "Carlos Henrique",

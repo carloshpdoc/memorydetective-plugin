@@ -4,6 +4,21 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.8.1] - 2026-05-06
+
+Documentation-only patch. No server bump, no MCP server constraint change (`.mcp.json` stays at `memorydetective@^1.8`).
+
+### Changed
+
+- `plugins/memorydetective/README.md` "Use" section expanded from a 4-line invocation note to a structured walkthrough with: 3 invocation modes (skill / slash command / plain English), an explicit "Optional: install axe" subsection clarifying the soft-dependency boundary, 5 concrete copy-pasteable workflows (classify existing memgraph, capture fresh, macOS 26.x auto-recovery, verify-fix loop, hangs/jank), and a "Common gotchas" subsection for the physical-device limitation, xctrace SIGSEGV workaround, and first-call latency.
+- Marketplace-level `README.md` (repo root) stale 1.7 references fixed (28 -> 31 tools, `^1.7` -> `^1.8`, plugin manifest reference). Caught during post-release double-check; the v1.8.0 sync touched the plugin sub-README but missed the parent.
+- Sub-plugin `README.md` Versioning section pin reference fixed (`^1.7` -> `^1.8`). Caught during the same double-check.
+
+### Notes
+
+- No server-side changes. Existing v1.8.0 plugin installs continue to work unchanged. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the updated README content.
+- No MCP tool changes, no SKILL.md changes, no constraint changes.
+
 ## [1.8.0] - 2026-05-06
 
 Tracks `memorydetective@1.8.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.7` to `^1.8`. SKILL.md gains the macOS 26.x troubleshooting workflow plus the new verify-fix orchestration playbook (bootAndLaunchForLeakInvestigation -> replayScenario -> captureScenarioState -> diffMemgraphs).
