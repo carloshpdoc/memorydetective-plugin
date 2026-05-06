@@ -57,7 +57,7 @@ The agent will pick the right tool chain.
 
 ## Versioning
 
-This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.7` via `npx -y`, so any 1.7.x patch/minor release is auto-resolved on first run.
+This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.8` via `npx -y`, so any 1.8.x patch/minor release is auto-resolved on first run.
 
 When the MCP server bumps to a new major (e.g. `2.0.0`), this plugin will publish a matching plugin version with the updated constraint.
 
