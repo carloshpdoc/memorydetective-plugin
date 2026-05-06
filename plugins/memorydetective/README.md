@@ -24,29 +24,93 @@ That's it. The MCP server is pulled from npm (`memorydetective@^1.8`) on first u
 
 ## Use
 
-Either invoke the skill directly:
+### Three ways to invoke
+
+**1. The disciplined skill.** Walks you through symptom triage and routes to the right playbook:
 
 ```
 /perf-investigate
 ```
 
-…and the agent will route to the right playbook based on what you describe.
-
-Or invoke a specific MCP prompt:
+**2. A specific slash command** when you already know the symptom class:
 
 ```
-/investigate-leak                    # for memory leaks (provide memgraphPath)
-/investigate-hangs                   # for main-thread hangs (provide tracePath)
-/investigate-jank                    # for animation hitches (provide tracePath)
-/investigate-launch                  # for slow app launch (provide tracePath)
-/verify-cycle-fix                    # to verify a fix landed (provide before, after)
+/investigate-leak       # memory leak (provide memgraphPath)
+/investigate-hangs      # main-thread hangs (provide tracePath)
+/investigate-jank       # animation hitches (provide tracePath)
+/investigate-launch     # slow app launch (provide tracePath)
+/verify-cycle-fix       # confirm a fix actually closed the cycle (before + after)
 ```
 
-Or just talk to the agent in plain English:
+**3. Plain English.** Best for ad-hoc work; the agent picks the tool chain:
 
 > "I have a memgraph at `~/Desktop/myapp.memgraph`. What's leaking?"
 
-The agent will pick the right tool chain.
+### Optional: install `axe` for UI driving
+
+Only required if you want to use `replayScenario` or the UI-tree sub-capture of `captureScenarioState`. Everything else works without it.
+
+```bash
+brew install cameroncooke/axe/axe
+```
+
+When `axe` is missing, those two tools return a structured `workaroundNotice` with this exact install hint instead of throwing.
+
+### Common workflows
+
+#### A. Classify a memgraph you already have
+
+You exported from Xcode (`Debug > View Memory Graph > File > Export Memory Graph`). Drop the path on the agent:
+
+> "I have a leak at `~/Desktop/leak.memgraph`. Classify it and tell me where to fix."
+
+What runs: `analyzeMemgraph` → `classifyCycle` → `swiftSearchPattern` / `swiftGetSymbolDefinition` → fix suggestion adapted to your codebase via the per-classification `fixTemplate` snippet.
+
+#### B. Capture a fresh memgraph from a running simulator app
+
+> "Capture a memgraph from `DemoApp` running on the simulator and classify it."
+
+What runs: `captureMemgraph({ appName: "DemoApp", output: ... })` → same chain as workflow A.
+
+#### C. macOS 26.x: `leaks --outputGraph` is broken
+
+If your app was launched without `MallocStackLogging=1`, `leaks` aborts with `Failed to get DYLD info for task`. v1.8 detects this and self-heals. From your side you do nothing different:
+
+> "Capture a memgraph from `DemoApp`."
+
+What runs:
+1. `captureMemgraph` returns `workaroundNotice: { issue: "minimal-corpse" }` with `suggestedNextCalls` pointing at the relaunch path
+2. Agent calls `bootAndLaunchForLeakInvestigation({ workspace: "MyApp.xcworkspace", scheme: "DemoApp", simulator: { name: "iPhone 15" } })` which builds, boots, installs, and launches with `MallocStackLogging=1` propagated via `SIMCTL_CHILD_*`
+3. Agent re-tries `captureMemgraph` with the new host PID
+4. Capture succeeds, classification proceeds normally
+
+#### D. Verify-fix loop (deterministic before/after snapshots)
+
+> "Build my app, repeat the carousel flow 5 times to amplify the leak, capture `before`. I'll ship the fix; then capture `after` and compare."
+
+What runs:
+1. `bootAndLaunchForLeakInvestigation({ workspace, scheme, simulator })` → app up with the right env
+2. `replayScenario({ simulatorUDID, actions: [...], repeat: 5 })` → drives the UI through the leaking flow
+3. `captureScenarioState({ simulatorUDID, pid, outputDir, label: "before" })` → writes `before.memgraph` + `before.png` + `before.ui.json`
+
+You ship the fix and rebuild. Steps 1-3 again with `label: "after"`, then:
+
+4. `diffMemgraphs(before.memgraph, after.memgraph)` → instances + bytes deltas
+5. `verifyFix(before, after, expectedPatternId: "swiftui.tag-index-projection")` → PASS / PARTIAL / FAIL
+
+#### E. Hangs or animation jank, not leaks
+
+> "Profile `DemoApp` for 60 s on my iPhone 17 Pro Max and tell me where the hangs are."
+
+What runs: `listTraceDevices` → `recordTimeProfile({ template: "Time Profiler", deviceId, attachAppName, durationSec: 60, output })` → `analyzeHangs`. Reports user-visible hangs with the longest at the top.
+
+For animation hitches, swap to `template: "Animation Hitches"` and `analyzeAnimationHitches`.
+
+### Common gotchas
+
+- **Physical iOS device + memgraph:** `leaks(1)` only attaches to local Mac processes (which includes the iOS Simulator). For physical devices, export from Xcode (`Debug > View Memory Graph > File > Export Memory Graph`) and pass the path to `analyzeMemgraph`.
+- **`xctrace` SIGSEGV on heavy traces:** `analyzeTimeProfile` returns a structured workaroundNotice. Open the trace once in Instruments to symbolicate, close it, then retry.
+- **First MCP call feels slow:** `npx -y memorydetective@^1.8` resolves the package on first invocation. Subsequent calls reuse the cached binary.
 
 ## Requirements
 
