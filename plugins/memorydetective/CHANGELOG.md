@@ -4,6 +4,23 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.11.0] - 2026-05-14
+
+Tracks `memorydetective@1.11.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.10` to `^1.11`. Validation-driven patch: re-running v1.10 against the global npm binary surfaced 3 gaps (CLI human-output ignored abandoned-memory, diffMemgraphs had the same reference-tree blind spot v1.10 fixed only in analyzeMemgraph + analyzeAbandonedMemory, and there was no orientation tool for .trace bundles).
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.10` -> `^1.11`. The `npx -y` resolver auto-pulls `memorydetective@1.11.x`.
+- `.claude-plugin/plugin.json`: version `1.10.0 -> 1.11.0`, description refreshed for v1.11 (inspectTrace, diffMemgraphs ref-tree, CLI surface).
+- `.claude-plugin/marketplace.json`: plugin description refreshed for v1.11 capabilities.
+- `plugins/memorydetective/README.md`: pin `^1.10 -> ^1.11`.
+- Marketplace-level `README.md` (repo root): pin + manifest reference + tool count 34 -> 35.
+
+### Notes
+
+- No SKILL.md changes in this release. The v1.10 playbook continues to apply; v1.11's new inspectTrace is a discovery tool that complements the existing analyzer playbook (use it as the FIRST call on a .trace), and the diffMemgraphs reference-tree integration is accessed via the same tool call with new optional response fields.
+- No breaking changes for users. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the new constraint.
+
 ## [1.10.0] - 2026-05-14
 
 Tracks `memorydetective@1.10.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.9` to `^1.10`. Notelet retro feedback loop: the v1.9 abandoned-memory pipeline left AVPlayerItem at raw rank ~82 in the heap (invisible at default `referenceTreeTopN: 20`) and the over-broad KVO co-occurrence classifier produced 25 false positives. v1.10 closes both gaps.
