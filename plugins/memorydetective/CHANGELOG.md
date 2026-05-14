@@ -4,6 +4,21 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.10.0] - 2026-05-14
+
+Tracks `memorydetective@1.10.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.9` to `^1.10`. Notelet retro feedback loop: the v1.9 abandoned-memory pipeline left AVPlayerItem at raw rank ~82 in the heap (invisible at default `referenceTreeTopN: 20`) and the over-broad KVO co-occurrence classifier produced 25 false positives. v1.10 closes both gaps.
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.9` -> `^1.10`. The `npx -y` resolver auto-pulls `memorydetective@1.10.x`.
+- `.claude-plugin/plugin.json`: version `1.9.0 -> 1.10.0`, description refreshed for v1.10 (actionable views + verify-fix-table).
+- `.claude-plugin/marketplace.json`: plugin description refreshed for v1.10 capabilities.
+
+### Notes
+
+- No SKILL.md changes in this release. The v1.9 SKILL playbook continues to apply; the new actionable views and verify-fix-table output are accessed via the existing tool calls with refined response shapes + the new `outputFormat: "verify-fix-table"` value.
+- No breaking changes for users. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the new constraint.
+
 ## [1.9.0] - 2026-05-14
 
 Tracks `memorydetective@1.9.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.8` to `^1.9`. SKILL.md gains the abandoned-memory playbook branch, the `mainThreadViolations[]` classification step in the perf-hangs playbook, and the env-flags reference.

@@ -20,7 +20,7 @@ When installed, this plugin auto-registers the `memorydetective` MCP server and 
 /plugin install memorydetective@memorydetective-plugin
 ```
 
-That's it. The MCP server is pulled from npm (`memorydetective@^1.9`) on first use.
+That's it. The MCP server is pulled from npm (`memorydetective@^1.10`) on first use.
 
 ## Use
 
@@ -128,7 +128,7 @@ What runs: see the [5-minute CI recipe](https://github.com/carloshpdoc/memorydet
 
 - **Physical iOS device + memgraph:** `leaks(1)` only attaches to local Mac processes (which includes the iOS Simulator). For physical devices, export from Xcode (`Debug > View Memory Graph > File > Export Memory Graph`) and pass the path to `analyzeMemgraph`.
 - **`xctrace` SIGSEGV on heavy traces:** `analyzeTimeProfile` returns a structured workaroundNotice. Open the trace once in Instruments to symbolicate, close it, then retry.
-- **First MCP call feels slow:** `npx -y memorydetective@^1.9` resolves the package on first invocation. Subsequent calls reuse the cached binary.
+- **First MCP call feels slow:** `npx -y memorydetective@^1.10` resolves the package on first invocation. Subsequent calls reuse the cached binary.
 
 ## Requirements
 
@@ -139,7 +139,7 @@ What runs: see the [5-minute CI recipe](https://github.com/carloshpdoc/memorydet
 
 ## Versioning
 
-This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.9` via `npx -y`, so any 1.9.x patch/minor release is auto-resolved on first run.
+This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.10` via `npx -y`, so any 1.10.x patch release is auto-resolved on first run.
 
 When the MCP server bumps to a new major (e.g. `2.0.0`), this plugin will publish a matching plugin version with the updated constraint.
 

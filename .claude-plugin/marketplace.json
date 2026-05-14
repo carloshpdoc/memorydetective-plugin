@@ -10,7 +10,7 @@
     {
       "name": "memorydetective",
       "source": "./plugins/memorydetective",
-      "description": "iOS leak hunting + performance investigation: 34 MCP tools, 36-pattern cycle classifier with Swift fixTemplate snippets, analyzeAbandonedMemory for the leakCount=0 family (orphaned KVO observers, runaway caches, singleton-retained payloads), detectLeaksInXCTest per-test CI gate with self-contained HTML reports, cleanupTraces ops tool, mainThreadViolations classification on analyzeHangs (sync-io / db-lock / network / lock-contention), single-call build+boot+launch fixing the macOS 26.x leaks --outputGraph regression, replayScenario + captureScenarioState verify-fix loop, compareTracesByPattern for CI gating, /perf-investigate skill. Reads .memgraph + .trace files; classifies retain cycles; bridges to Swift source via SourceKit-LSP.",
+      "description": "iOS leak hunting + performance investigation: 34 MCP tools, 36-pattern cycle classifier with Swift fixTemplate snippets, analyzeAbandonedMemory for the leakCount=0 family with v1.10 actionableGrowth / actionableShrinkage views + verify-fix-table markdown output, detectLeaksInXCTest per-test CI gate with self-contained HTML reports, cleanupTraces ops tool, mainThreadViolations classification on analyzeHangs (sync-io / db-lock / network / lock-contention), single-call build+boot+launch fixing the macOS 26.x leaks --outputGraph regression, replayScenario + captureScenarioState verify-fix loop, compareTracesByPattern for CI gating, /perf-investigate skill. Reads .memgraph + .trace files; classifies retain cycles; bridges to Swift source via SourceKit-LSP.",
       "category": "development",
       "homepage": "https://github.com/carloshpdoc/memorydetective"
     }
