@@ -6,8 +6,8 @@
 
 When installed, this plugin auto-registers the `memorydetective` MCP server and adds a top-level skill:
 
-- **31 MCP tools**: `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `verifyFix`, `compareTracesByPattern`, `analyzeHangs`, `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `detectLeaksInXCUITest`, the v1.8 verify-fix trio (`bootAndLaunchForLeakInvestigation`, `replayScenario`, `captureScenarioState`) for the macOS 26.x `leaks --outputGraph` regression plus deterministic before/after snapshots, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
-- **34 cycle patterns** in the classifier: SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit, Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
+- **34 MCP tools**: `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `analyzeAbandonedMemory` (v1.9, for the leakCount=0 family), `verifyFix`, `compareTracesByPattern`, `analyzeHangs` (v1.9 ships an optional `mainThreadViolations[]` classifier: sync-io / db-lock / network / lock-contention), `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `cleanupTraces` (v1.9), `detectLeaksInXCTest` (v1.9), `detectLeaksInXCUITest` (both detectLeaks* tools accept `outputHtmlPath` for self-contained HTML reports), the v1.8 verify-fix trio (`bootAndLaunchForLeakInvestigation`, `replayScenario`, `captureScenarioState`) for the macOS 26.x `leaks --outputGraph` regression plus deterministic before/after snapshots, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
+- **36 cycle patterns** in the classifier: SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack / the v1.9 `observable-write-on-every-render` shape), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit (incl. the v1.9 `viewcontroller-retained-after-pop` shape), Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
 - **Per-classification triple**: every cycle now ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this, or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, new in v1.7)
 - **5 MCP prompts** as slash commands: `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`
 - **34 catalog resources** browsable at `memorydetective://patterns/{patternId}`, so an agent can read the catalog without burning a tool call
@@ -20,7 +20,7 @@ When installed, this plugin auto-registers the `memorydetective` MCP server and 
 /plugin install memorydetective@memorydetective-plugin
 ```
 
-That's it. The MCP server is pulled from npm (`memorydetective@^1.8`) on first use.
+That's it. The MCP server is pulled from npm (`memorydetective@^1.9`) on first use.
 
 ## Use
 
@@ -106,11 +106,29 @@ What runs: `listTraceDevices` → `recordTimeProfile({ template: "Time Profiler"
 
 For animation hitches, swap to `template: "Animation Hitches"` and `analyzeAnimationHitches`.
 
+For v1.9, you can also re-call `analyzeHangs` with a `topFramesByHangStartNs` map (built from a chained `analyzeTimeProfile`) to enrich each top hang with a `mainThreadViolations[]` classification: `sync-io` (read/write/fsync, NSData blocking inits), `db-lock` (SQLite mutex / NSManagedObjectContext save), `network` (NSURLConnection sendSynchronousRequest, blocking nw_connection), or `lock-contention` (pthread / os_unfair_lock / dispatch_semaphore_wait / dispatch_sync).
+
+#### F. Abandoned-memory shape (leakCount: 0 but heap grows)
+
+The leaks you can't see with `leaks(1)` alone. Orphaned KVO observers, NotificationCenter blocks that were never removed, caches that never evict, singleton-retained payloads. The objects are reachable from KVO's global registry (or your singleton), so they don't count as "leaked" in the strict sense.
+
+> "I have two memgraphs at `~/Desktop/before.memgraph` and `~/Desktop/after.memgraph`. Both report leakCount: 0 but the heap clearly grew. What's accumulating?"
+
+What runs: `analyzeAbandonedMemory(before, after)` → returns `growthByClass[]` ranked by delta, each entry classified as `kvo-observer-orphaned`, `notificationcenter-observer-leaked`, `cache-too-aggressive`, `singleton-retains-payload`, or `unknown-growth`. The classifier escalates when `NSKeyValueObservance` co-occurs with another large-delta class (the KVO-observer-orphan signal).
+
+If you only have ONE memgraph and want to know what is accumulating at the top: pass `referenceTreeTopN: 20` to `analyzeMemgraph` to surface the top classes by live instance count from a single snapshot.
+
+#### G. CI: gate a PR on per-test leak detection
+
+> "Wire this unit-test scheme into GitHub Actions so the build fails when a new ROOT CYCLE appears."
+
+What runs: see the [5-minute CI recipe](https://github.com/carloshpdoc/memorydetective#add-memorydetective-to-your-ci-in-5-minutes) in the upstream README. `detectLeaksInXCTest --outputHtmlPath` writes a self-contained HTML report you can upload as a workflow artifact; the exit code is non-zero when new cycles outside the allowlist appear.
+
 ### Common gotchas
 
 - **Physical iOS device + memgraph:** `leaks(1)` only attaches to local Mac processes (which includes the iOS Simulator). For physical devices, export from Xcode (`Debug > View Memory Graph > File > Export Memory Graph`) and pass the path to `analyzeMemgraph`.
 - **`xctrace` SIGSEGV on heavy traces:** `analyzeTimeProfile` returns a structured workaroundNotice. Open the trace once in Instruments to symbolicate, close it, then retry.
-- **First MCP call feels slow:** `npx -y memorydetective@^1.8` resolves the package on first invocation. Subsequent calls reuse the cached binary.
+- **First MCP call feels slow:** `npx -y memorydetective@^1.9` resolves the package on first invocation. Subsequent calls reuse the cached binary.
 
 ## Requirements
 
@@ -121,7 +139,7 @@ For animation hitches, swap to `template: "Animation Hitches"` and `analyzeAnima
 
 ## Versioning
 
-This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.8` via `npx -y`, so any 1.8.x patch/minor release is auto-resolved on first run.
+This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.9` via `npx -y`, so any 1.9.x patch/minor release is auto-resolved on first run.
 
 When the MCP server bumps to a new major (e.g. `2.0.0`), this plugin will publish a matching plugin version with the updated constraint.
 

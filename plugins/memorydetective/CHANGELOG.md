@@ -4,6 +4,29 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.9.0] - 2026-05-14
+
+Tracks `memorydetective@1.9.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.8` to `^1.9`. SKILL.md gains the abandoned-memory playbook branch, the `mainThreadViolations[]` classification step in the perf-hangs playbook, and the env-flags reference.
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.8` -> `^1.9`. The `npx -y` resolver auto-pulls `memorydetective@1.9.x`.
+- `skills/perf-investigate/SKILL.md`:
+  - Tooling summary: Read & analyze `13 -> 14` (adds `analyzeAbandonedMemory`), new "Ops (1, v1.9)" section listing `cleanupTraces`, "CI / test integration" `2 -> 3` (adds `detectLeaksInXCTest`).
+  - Memgraph-leak playbook (A) gains a new step `3b`: when `analyzeMemgraph` reports `leakCount: 0` and `classifyCycle` returns `primaryMatch: null`, route to `analyzeAbandonedMemory(before, after)` for the KVO-observer / NotificationCenter / cache / singleton-retained shapes that `leaks(1)` cannot see.
+  - Perf-hangs playbook (B) gains a step for the new `mainThreadViolations[]` enrichment: chain a `topFramesByHangStartNs` map (built from `analyzeTimeProfile`) back into `analyzeHangs` to classify each top hang as `sync-io`, `db-lock`, `network`, or `lock-contention` with a canonical fix chain.
+  - Catalog reference updated `34 -> 36` patterns, with `uikit.viewcontroller-retained-after-pop` and `swiftui.observable-write-on-every-render` added to the UIKit and SwiftUI category lists respectively.
+  - New "Environment flags worth knowing (v1.9)" section: `MEMORYDETECTIVE_REDACTION`, `ALLOW_LAUNCH`, `MAX_RECORDING_SECONDS`, `TRACE_ROOT`, `ALLOW_EXTERNAL_CLEANUP`, `SUPPRESS_PLATFORM_ADVISORY`.
+- `plugins/memorydetective/README.md`: tool count `31 -> 34`, pattern count `34 -> 36`, npm pin `^1.8 -> ^1.9`. New workflows F (abandoned-memory shape) and G (CI per-test leak detection). Existing workflows E (hangs / animation jank) expanded with the v1.9 `mainThreadViolations` enrichment.
+- `.claude-plugin/plugin.json`: version `1.8.1 -> 1.9.0`, description refreshed for v1.9 capabilities.
+- `.claude-plugin/marketplace.json`: plugin description refreshed for v1.9 capabilities.
+- Marketplace-level `README.md` (repo root): tool count `31 -> 34`, pattern count `34 -> 36`, manifest reference updated to v1.9.0, npm pin `^1.8 -> ^1.9`, new bullet listing v1.9 highlights.
+
+### Notes
+
+- No breaking changes for users. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the new constraint and SKILL content.
+- The `^1.9` constraint will continue to auto-resolve 1.9.x patch/minor releases without a plugin bump.
+
 ## [1.8.1] - 2026-05-06
 
 Documentation-only patch. No server bump, no MCP server constraint change (`.mcp.json` stays at `memorydetective@^1.8`).
@@ -54,19 +77,19 @@ Tracks `memorydetective@1.7.0` server release. The plugin's `.mcp.json` constrai
 
 ### Notes
 
-- No breaking changes for users — the plugin install command is unchanged. Re-running `/plugin install memorydetective@memorydetective-plugin` (or the auto-update on session start) picks up the new constraint and SKILL content.
+- No breaking changes for users. The plugin install command is unchanged. Re-running `/plugin install memorydetective@memorydetective-plugin` (or the auto-update on session start) picks up the new constraint and SKILL content.
 
-## [1.6.0] — 2026-05-03
+## [1.6.0] - 2026-05-03
 
 Initial public release of the Claude Code plugin wrapper for `memorydetective`.
 
 ### Added
 
 - Plugin manifest declaring the `memorydetective` plugin, pulling the MCP server from npm via `npx -y memorydetective@^1.6`.
-- `/perf-investigate` skill — disciplined iOS performance + memory-leak investigation playbook routing to the right MCP tools based on symptom (memgraph-leak, perf-hangs, ui-jank, app-launch-slow, verify-fix).
+- `/perf-investigate` skill: disciplined iOS performance + memory-leak investigation playbook routing to the right MCP tools based on symptom (memgraph-leak, perf-hangs, ui-jank, app-launch-slow, verify-fix).
 - Marketplace catalog (`.claude-plugin/marketplace.json`) for one-command install via `/plugin marketplace add`.
 
 ### Notes
 
-- Plugin version is pinned to `1.6.0` because the npm `memorydetective` server is at `1.6.0` at release time. Patch + minor server releases are picked up automatically via the `^1.6` constraint in `.mcp.json` — no plugin bump required.
+- Plugin version is pinned to `1.6.0` because the npm `memorydetective` server is at `1.6.0` at release time. Patch + minor server releases are picked up automatically via the `^1.6` constraint in `.mcp.json`, with no plugin bump required.
 - Major server releases (e.g. `2.0.0`) will require a plugin manifest bump.

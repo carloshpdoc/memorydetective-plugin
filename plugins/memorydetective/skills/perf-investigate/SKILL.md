@@ -46,11 +46,18 @@ If the user has a slash command available, you can also invoke the matching MCP 
    - Note the count of ROOT CYCLEs and the dominant class chain.
    - The response includes `suggestedNextCalls`. Follow them.
 
-3. **`classifyCycle(path)`**: match against the 34-pattern catalog
+3. **`classifyCycle(path)`**: match against the 36-pattern catalog
    - Returns `primaryMatch` (highest-confidence pattern) + `allMatches` (everything that fired).
    - Each match carries: `patternId`, `name`, `confidence` (high/medium/low), `fixHint` (textual fix direction), `staticAnalysisHint` (which SwiftLint rule complements this OR explicit gap notice), and `fixTemplate` (Swift before/after code snippet. Adapt the type/method names to the user's codebase via the SourceKit-LSP tools).
-   - **If `primaryMatch` is `null`:** the cycle is novel. Skip to step 4 with `findRetainers` to walk the chain manually.
+   - **If `primaryMatch` is `null` AND `analyzeMemgraph` reported `leakCount: 0`:** this is the abandoned-memory shape. Skip to step 3b. v1.9 added a dedicated classifier for it.
+   - **If `primaryMatch` is `null` BUT leaks exist:** the cycle is novel. Skip to step 4 with `findRetainers` to walk the chain manually.
    - **If `primaryMatch.confidence === "high"`:** treat the `fixHint` as authoritative direction. Lift the `fixTemplate` snippet as a starting point. DON'T paste it verbatim, adapt to the actual type/method names. Move to source location.
+
+3b. **`analyzeAbandonedMemory(beforePath, afterPath)`** (when `leakCount: 0` on both sides)
+   - The leak shape that `leaks(1)` cannot see: orphaned KVO observers, never-removed NotificationCenter blocks, runaway caches, singleton-retained payloads. The objects are technically reachable from KVO's global registry (or your singleton), so they don't count as "leaked" in the strict sense. They still grow without bound.
+   - The pipeline is the verify-fix loop run in reverse: take a `before` snapshot of the suspected leaky state (e.g. after 10 cycles of the suspected flow), and an `after` snapshot of a clean baseline (e.g. cold launch). Compare them.
+   - Returns `growthByClass[]` ranked by absolute delta. Each entry carries `classification` (`kvo-observer-orphaned` / `notificationcenter-observer-leaked` / `cache-too-aggressive` / `singleton-retains-payload` / `unknown-growth`), `confidence`, and a contextual `hint`. The classifier escalates when `NSKeyValueObservance` co-occurs with another large-delta class (the KVO-observer-orphan signal).
+   - You can ALSO call `analyzeMemgraph` on a single `.memgraph` with `referenceTreeTopN: 20` to surface the top abandoned-memory classes from a SINGLE snapshot when you don't have a baseline yet.
 
 4. **`findRetainers(path, className)`** OR **`reachableFromCycle(path, rootClassName)`**
    - `findRetainers` returns retain chain paths from a top-level node down to the named class. Useful when classifyCycle didn't fire.
@@ -84,9 +91,11 @@ If the user has a slash command available, you can also invoke the matching MCP 
 
 2. **`analyzeHangs(tracePath)`**: parses xctrace's `potential-hangs` schema. Reports Hang vs Microhang counts + top N longest. The user-perceptible threshold is 250ms.
 
-3. **If hangs concentrate at a specific call site:** use `swiftSearchPattern` with patterns like `DispatchQueue\.main\.sync` or `Task\s*\{` to find synchronous main-thread offenders.
+3. **For sample-level hotspots:** `analyzeTimeProfile(tracePath)` returns top symbols. Note: `xctrace export --xpath '...time-profile'` SIGSEGVs on heavy unsymbolicated traces. The tool surfaces a structured workaround notice when this hits. Open the trace in Instruments first, then re-export from CLI.
 
-4. **For sample-level hotspots:** `analyzeTimeProfile(tracePath)` returns top symbols. Note: `xctrace export --xpath '...time-profile'` SIGSEGVs on heavy unsymbolicated traces. The tool surfaces a structured workaround notice when this hits. Open the trace in Instruments first, then re-export from CLI.
+4. **Classify what was blocking the main thread (v1.9):** chain the time-profile result back into `analyzeHangs` with `topFramesByHangStartNs: { '<startNs>': '<topFrame>' }` so each hang carries a `mainThreadViolations[]` entry classifying the work as `sync-io` (read/write/fsync/NSData blocking inits), `db-lock` (SQLite mutex / NSManagedObjectContext save), `network` (NSURLConnection sendSynchronousRequest, blocking nw_connection), or `lock-contention` (pthread / os_unfair_lock / dispatch_semaphore_wait / dispatch_sync). Each kind has a canonical fix chain (move to Task.detached / background DispatchQueue / async API).
+
+5. **If hangs concentrate at a specific call site:** use `swiftSearchPattern` with patterns like `DispatchQueue\.main\.sync` or `Task\s*\{` to find synchronous main-thread offenders.
 
 ## Playbook C: ui-jank (animation hitches)
 
@@ -133,15 +142,15 @@ For **trace-side** verification (hangs / animation hitches / app launch):
 - **Fixing the wrong cycle.** If multiple ROOT CYCLEs exist, prioritize by `transitiveBytes` (added in v1.4). The cycle that pins the most memory is the leverage. `analyzeMemgraph` returns this in `cycles[].transitiveBytes`.
 - **Skipping `verifyFix`.** A fix that "looked right" is not a fix until the diff confirms the cycle is gone. Especially before merging or closing the ticket.
 
-## Catalog reference (34 patterns)
+## Catalog reference (36 patterns)
 
 The classifier covers the leak families that account for ~95% of real-world iOS retain cycles. Browse the live catalog as MCP resources at `memorydetective://patterns/{patternId}`. Every pattern has a markdown body with name, fix hint, and how to confirm via runtime evidence.
 
 Categories:
-- **SwiftUI**: including `.tag()` modifier, `_DictionaryStorage`/WeakBox, `ForEachState`, `@EnvironmentObject` back-refs, `@Observable`+`@State` modal leaks, `NavigationPath` retention
+- **SwiftUI**: including `.tag()` modifier, `_DictionaryStorage`/WeakBox, `ForEachState`, `@EnvironmentObject` back-refs, `@Observable`+`@State` modal leaks, `NavigationPath` retention, **v1.9: `swiftui.observable-write-on-every-render`** (mutating an `@Observable` inside `body`, scheduling infinite re-render; fix is to move the mutation to `.onChange` / `.task(id:)` or compute it as a derived property)
 - **Combine**: `.sink` cancellable cycles, `.assign(to: \.x, on: self)`
 - **Swift Concurrency**: `Task { }` capturing self, `AsyncStream` continuation, `AsyncSequence` on self (incl. `NotificationCenter.notifications(named:)`), Swift 6.2 `Observations { }` closure
-- **UIKit / Foundation**: `Timer.scheduledTimer(target:selector:)`, `CADisplayLink`, `UIGestureRecognizer.addTarget`, `NSKeyValueObservation`, `URLSession` delegate, `NotificationCenter` block-form observer, `DispatchSource` event handler, `delegate` not declared `weak`
+- **UIKit / Foundation**: `Timer.scheduledTimer(target:selector:)`, `CADisplayLink`, `UIGestureRecognizer.addTarget`, `NSKeyValueObservation`, `URLSession` delegate, `NotificationCenter` block-form observer, `DispatchSource` event handler, `delegate` not declared `weak`, **v1.9: `uikit.viewcontroller-retained-after-pop`** (VC subclass alive in heap without parent/presenter edges; usually a closure / Combine sink / KVO observation retaining a popped VC)
 - **WebKit**: `WKUserContentController.add` script-message-handler, including the 3-link bridge cycle
 - **Core Animation**: `CAAnimation.delegate` strong-retain, custom `CALayer` subclass + non-UIView delegate
 - **Core Data**: `NSFetchedResultsController.delegate`
@@ -159,10 +168,12 @@ Categories:
 ## Tooling summary (so you don't have to call `tools/list`)
 
 ```
-Read & analyze (13)
+Read & analyze (14)
   analyzeMemgraph, findCycles, findRetainers, countAlive, reachableFromCycle,
-  diffMemgraphs, verifyFix, classifyCycle, analyzeHangs, analyzeAnimationHitches,
-  analyzeTimeProfile, analyzeAllocations, analyzeAppLaunch, logShow
+  diffMemgraphs, analyzeAbandonedMemory (v1.9: leakCount=0 family), verifyFix,
+  classifyCycle, analyzeHangs (v1.9: optional mainThreadViolations[]),
+  analyzeAnimationHitches, analyzeTimeProfile, analyzeAllocations,
+  analyzeAppLaunch, logShow
 
 Capture / record (3)
   recordTimeProfile, captureMemgraph, logStream
@@ -176,8 +187,15 @@ Discover (2)
 Render (1)
   renderCycleGraph (Mermaid + Graphviz DOT)
 
-CI / test integration (2)
-  detectLeaksInXCUITest (experimental), compareTracesByPattern
+Ops (1, v1.9)
+  cleanupTraces (dryRun-default preview/delete of .trace bundles under
+  MEMORYDETECTIVE_TRACE_ROOT)
+
+CI / test integration (3)
+  detectLeaksInXCTest (v1.9, per-test unit-test gate),
+  detectLeaksInXCUITest, compareTracesByPattern. Both detectLeaks* tools
+  accept outputHtmlPath for self-contained HTML reports you can upload as
+  a CI artifact.
 
 Swift source bridging (5)
   swiftGetSymbolDefinition, swiftFindSymbolReferences, swiftGetSymbolsOverview,
@@ -190,6 +208,19 @@ Pipeline awareness (1, meta)
 Plus 5 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`.
 
 Plus 34 catalog resources at `memorydetective://patterns/{patternId}`.
+
+## Environment flags worth knowing (v1.9)
+
+The MCP server reads these on startup. The server logs the active redaction mode once on stderr so you can spot misconfigurations.
+
+| Variable | Default | When to set |
+|---|---|---|
+| `MEMORYDETECTIVE_REDACTION` | `balanced` | Set to `strict` for sensitive sessions (masks hostnames, IPv4, bundle ids in addition to home paths and token-shaped secrets). `off` only for local-only debugging. |
+| `MEMORYDETECTIVE_ALLOW_LAUNCH` | unset | `bootAndLaunchForLeakInvestigation` requires this to be `1` before running `xcodebuild` + `xcrun simctl launch`. Without it the tool returns `ok: false` with `state: "launchNotAllowed"`. |
+| `MEMORYDETECTIVE_MAX_RECORDING_SECONDS` | `300` | Cap on `recordTimeProfile.durationSec`. Raise (max `3600`) when you genuinely need long captures. |
+| `MEMORYDETECTIVE_TRACE_ROOT` | `~/Library/Application Support/memorydetective/traces` | Default directory for `.trace` bundles when `recordTimeProfile.output` is a relative path. Also the default scan path for `cleanupTraces`. |
+| `MEMORYDETECTIVE_ALLOW_EXTERNAL_CLEANUP` | unset | Required to be `1` for `cleanupTraces` to scan/delete outside `MEMORYDETECTIVE_TRACE_ROOT`. Default-deny on destructive disk operations outside the configured boundary. |
+| `MEMORYDETECTIVE_SUPPRESS_PLATFORM_ADVISORY` | unset | Set to `1` once you have an iOS 18 sim runtime installed and no longer need the macOS 26.x reminder banner. |
 
 ## When `captureMemgraph` fails on macOS 26.x
 

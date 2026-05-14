@@ -12,9 +12,10 @@
 That's it. You get:
 
 - The `memorydetective` MCP server auto-registered (pulled from npm via `npx`)
-- 31 MCP tools + a `/perf-investigate` skill for disciplined investigation
+- 34 MCP tools + a `/perf-investigate` skill for disciplined investigation
 - 5 slash commands (`/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`)
-- 34 cycle-pattern resources browsable at `memorydetective://patterns/{patternId}`, every classification carrying `fixHint` + `staticAnalysisHint` + `fixTemplate` (Swift before/after snippet)
+- 36 cycle-pattern resources browsable at `memorydetective://patterns/{patternId}`, every classification carrying `fixHint` + `staticAnalysisHint` + `fixTemplate` (Swift before/after snippet)
+- v1.9 highlights: `analyzeAbandonedMemory` for the leakCount=0 family (orphaned KVO observers, runaway caches, singleton-retained payloads), `detectLeaksInXCTest` per-test CI gate with self-contained HTML reports, `cleanupTraces` ops tool, `mainThreadViolations[]` classification on `analyzeHangs` (sync-io / db-lock / network / lock-contention)
 
 Full docs: [plugins/memorydetective/README.md](./plugins/memorydetective/README.md).
 
@@ -33,7 +34,7 @@ memorydetective-plugin/
 └── plugins/
     └── memorydetective/
         ├── .claude-plugin/
-        │   └── plugin.json        ← plugin manifest (v1.8.0)
+        │   └── plugin.json        ← plugin manifest (v1.9.0)
         ├── .mcp.json              ← MCP server registration (npx pulls from npm)
         ├── skills/
         │   └── perf-investigate/
@@ -45,7 +46,7 @@ memorydetective-plugin/
 
 ## Versioning
 
-Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.8.x` pulls `memorydetective@^1.8` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
+Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.9.x` pulls `memorydetective@^1.9` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
 
 ## Source
 
