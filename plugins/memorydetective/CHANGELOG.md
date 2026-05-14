@@ -4,6 +4,23 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.12.0] - 2026-05-14
+
+Tracks `memorydetective@1.12.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.11` to `^1.12`. Four-phase server patch: countAlive / findRetainers / verifyFix gain reference-tree integration (so the abandoned-memory agent chain works end-to-end on leakCount=0 memgraphs), and analyzeHangs gains auto cross-schema correlation via `includeStackClassification: true` (auto-populates mainThreadViolations[] without the caller building topFramesByHangStartNs manually).
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.11` -> `^1.12`. The `npx -y` resolver auto-pulls `memorydetective@1.12.x`.
+- `.claude-plugin/plugin.json`: version `1.11.0 -> 1.12.0`, description refreshed for v1.12.
+- `.claude-plugin/marketplace.json`: plugin description refreshed for v1.12.
+- `plugins/memorydetective/README.md`: pin `^1.11 -> ^1.12`.
+- Marketplace-level `README.md` (repo root): pin + manifest reference updated.
+
+### Notes
+
+- No SKILL.md changes in this release. The v1.10 playbook still applies; v1.12's new flags (`includeReferenceTree` on countAlive/findRetainers, `includeStackClassification` on analyzeHangs) are accessed via the same tool calls with new optional input parameters.
+- No breaking changes for users. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the new constraint.
+
 ## [1.11.0] - 2026-05-14
 
 Tracks `memorydetective@1.11.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.10` to `^1.11`. Validation-driven patch: re-running v1.10 against the global npm binary surfaced 3 gaps (CLI human-output ignored abandoned-memory, diffMemgraphs had the same reference-tree blind spot v1.10 fixed only in analyzeMemgraph + analyzeAbandonedMemory, and there was no orientation tool for .trace bundles).

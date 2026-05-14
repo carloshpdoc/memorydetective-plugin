@@ -34,7 +34,7 @@ memorydetective-plugin/
 └── plugins/
     └── memorydetective/
         ├── .claude-plugin/
-        │   └── plugin.json        ← plugin manifest (v1.11.0)
+        │   └── plugin.json        ← plugin manifest (v1.12.0)
         ├── .mcp.json              ← MCP server registration (npx pulls from npm)
         ├── skills/
         │   └── perf-investigate/
@@ -46,7 +46,7 @@ memorydetective-plugin/
 
 ## Versioning
 
-Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.11.x` pulls `memorydetective@^1.11` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
+Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.12.x` pulls `memorydetective@^1.12` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
 
 ## Source
 
