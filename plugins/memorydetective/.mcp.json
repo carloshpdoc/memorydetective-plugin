@@ -2,7 +2,7 @@
   "mcpServers": {
     "memorydetective": {
       "command": "npx",
-      "args": ["-y", "memorydetective@^1.12"],
+      "args": ["-y", "memorydetective@^1.13"],
       "env": {}
     }
   }

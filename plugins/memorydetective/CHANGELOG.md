@@ -4,6 +4,23 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.13.0] - 2026-05-14
+
+Tracks `memorydetective@1.13.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.12` to `^1.13`. Server v1.13 adds summarizeTrace (36th MCP tool, single-call cross-schema trace synthesis with pre-rendered markdown card + cross-correlations) and the /summarize-trace MCP prompt (6th prompt).
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.12` -> `^1.13`. The `npx -y` resolver auto-pulls `memorydetective@1.13.x`.
+- `.claude-plugin/plugin.json`: version `1.12.0 -> 1.13.0`, description refreshed for v1.13 (summarizeTrace + /summarize-trace prompt).
+- `.claude-plugin/marketplace.json`: plugin description refreshed for v1.13 capabilities.
+- `plugins/memorydetective/README.md`: pin `^1.12 -> ^1.13`.
+- Marketplace-level `README.md` (repo root): pin + manifest reference + tool count 35 -> 36.
+
+### Notes
+
+- No SKILL.md changes in this release. The v1.10 playbook still applies; v1.13's summarizeTrace is a new orientation tool that complements the existing playbook (use it as the FIRST call on any .trace alongside inspectTrace).
+- No breaking changes for users. Re-running `/plugin install memorydetective@memorydetective-plugin` (or auto-update on session start) picks up the new constraint.
+
 ## [1.12.0] - 2026-05-14
 
 Tracks `memorydetective@1.12.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.11` to `^1.12`. Four-phase server patch: countAlive / findRetainers / verifyFix gain reference-tree integration (so the abandoned-memory agent chain works end-to-end on leakCount=0 memgraphs), and analyzeHangs gains auto cross-schema correlation via `includeStackClassification: true` (auto-populates mainThreadViolations[] without the caller building topFramesByHangStartNs manually).
