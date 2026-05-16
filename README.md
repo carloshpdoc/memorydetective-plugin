@@ -12,10 +12,10 @@
 That's it. You get:
 
 - The `memorydetective` MCP server auto-registered (pulled from npm via `npx`)
-- 36 MCP tools + a `/perf-investigate` skill for disciplined investigation
-- 5 slash commands (`/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`)
-- 36 cycle-pattern resources browsable at `memorydetective://patterns/{patternId}`, every classification carrying `fixHint` + `staticAnalysisHint` + `fixTemplate` (Swift before/after snippet)
-- v1.9 highlights: `analyzeAbandonedMemory` for the leakCount=0 family (orphaned KVO observers, runaway caches, singleton-retained payloads), `detectLeaksInXCTest` per-test CI gate with self-contained HTML reports, `cleanupTraces` ops tool, `mainThreadViolations[]` classification on `analyzeHangs` (sync-io / db-lock / network / lock-contention)
+- 41 MCP tools + a `/perf-investigate` skill for disciplined investigation
+- 6 slash commands (`/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`, `/summarize-trace`)
+- 34 cycle-pattern resources browsable at `memorydetective://patterns/{patternId}`, every classification carrying `fixHint` + `staticAnalysisHint` + `fixTemplate` (Swift before/after snippet)
+- Recent headlines: v1.17 reliability pass (strtobool env truthy parsing, `verifyFix` whitelist match modes, Instruments.app AppleScript document query that catches traces saved outside `watchDir`, fault-tolerant `inspectTrace` fallback, configurable `countAlive` framework-noise filter). v1.16 unblocked macOS 26.x trace recording via `recordViaInstrumentsApp`. v1.15 added the trace-side schema-coverage trio. v1.13 shipped `summarizeTrace` + `/summarize-trace` MCP prompt. v1.9 shipped `analyzeAbandonedMemory` for the `leakCount=0` family.
 
 Full docs: [plugins/memorydetective/README.md](./plugins/memorydetective/README.md).
 
@@ -34,7 +34,7 @@ memorydetective-plugin/
 └── plugins/
     └── memorydetective/
         ├── .claude-plugin/
-        │   └── plugin.json        ← plugin manifest (v1.13.0)
+        │   └── plugin.json        ← plugin manifest (v1.17.0)
         ├── .mcp.json              ← MCP server registration (npx pulls from npm)
         ├── skills/
         │   └── perf-investigate/
@@ -46,7 +46,7 @@ memorydetective-plugin/
 
 ## Versioning
 
-Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.13.x` pulls `memorydetective@^1.13` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
+Plugin tracks the MCP server's minor version. `memorydetective-plugin@1.17.x` pulls `memorydetective@^1.17` via `npx`. Patch releases are auto-resolved without bumping the plugin. Major server bumps (e.g. `2.0.0`) require a plugin manifest update.
 
 ## Source
 

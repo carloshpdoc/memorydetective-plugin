@@ -168,21 +168,34 @@ Categories:
 ## Tooling summary (so you don't have to call `tools/list`)
 
 ```
-Read & analyze (14)
+Read & analyze (17)
   analyzeMemgraph, findCycles, findRetainers, countAlive, reachableFromCycle,
   diffMemgraphs, analyzeAbandonedMemory (v1.9: leakCount=0 family), verifyFix,
-  classifyCycle, analyzeHangs (v1.9: optional mainThreadViolations[]),
+  classifyCycle, analyzeHangs (v1.9: optional mainThreadViolations[];
+  v1.14: hang-risks schema; v1.17: supportStatus[] always carries both),
   analyzeAnimationHitches, analyzeTimeProfile, analyzeAllocations,
-  analyzeAppLaunch, logShow
+  analyzeAppLaunch, analyzeNetworkActivity (v1.14), analyzeMemoryFootprint
+  (v1.15, VM resident/dirty/jetsam), analyzeEnergyImpact (v1.15, battery
+  drain), analyzeLeakTimeline (v1.15, xctrace leaks as time series),
+  logShow
 
-Capture / record (3)
-  recordTimeProfile, captureMemgraph, logStream
+Capture / record (4)
+  recordTimeProfile (v1.17: bundleStatus on-disk viability field),
+  recordViaInstrumentsApp (v1.16, macOS 26.x escape hatch; v1.17: catches
+  saves outside watchDir via AppleScript document query),
+  captureMemgraph, logStream
 
 Verify-fix orchestration (3, v1.8)
-  bootAndLaunchForLeakInvestigation, replayScenario, captureScenarioState
+  bootAndLaunchForLeakInvestigation, replayScenario (v1.15: screenshotDir
+  per step), captureScenarioState
 
-Discover (2)
-  listTraceDevices, listTraceTemplates
+Discover (3)
+  listTraceDevices, listTraceTemplates, inspectTrace (v1.11; v1.17:
+  fault-tolerant fallback returns ok:true on wedged bundles)
+
+Synthesize (1, v1.13)
+  summarizeTrace (single-call cross-schema synthesis with pre-rendered
+  markdown card; v1.15 chains analyzeNetworkActivity)
 
 Render (1)
   renderCycleGraph (Mermaid + Graphviz DOT)
@@ -205,22 +218,38 @@ Pipeline awareness (1, meta)
   getInvestigationPlaybook
 ```
 
-Plus 5 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`.
+41 MCP tools total. v1.17 is reliability-only (no new tool, no surface
+removals). Highlights to teach the agent:
+- `verifyFix.expectedAliveClasses` accepts per-entry { pattern, mode } where
+  mode is "exact" | "substring" | "regex" (v1.17). Bare strings still mean
+  substring for backwards compat.
+- `countAlive` exposes `excludeFrameworkNoise` / `additionalNoisePatterns` /
+  `unsuppressClassPatterns` / `noiseAuditMode` so the actionable view can
+  be tuned per app (v1.17).
+- Variable-size classes (NSData, NSString, CFData) report
+  `instanceSizeBytesMin / Max / Median` (v1.17). Fixed-size classes still
+  report a single `instanceSizeBytes` value.
+
+Plus 6 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`, `/summarize-trace`.
 
 Plus 34 catalog resources at `memorydetective://patterns/{patternId}`.
 
-## Environment flags worth knowing (v1.9)
+## Environment flags worth knowing
 
 The MCP server reads these on startup. The server logs the active redaction mode once on stderr so you can spot misconfigurations.
+
+Every boolean below accepts the **strtobool** truthy set (v1.17+, case-insensitive): `1 / true / t / yes / y / on` (truthy) and `0 / false / f / no / n / off` (falsy). Unrecognized values emit a one-time stderr warning per variable and fall back to the default; pre-v1.17 only `1` worked.
 
 | Variable | Default | When to set |
 |---|---|---|
 | `MEMORYDETECTIVE_REDACTION` | `balanced` | Set to `strict` for sensitive sessions (masks hostnames, IPv4, bundle ids in addition to home paths and token-shaped secrets). `off` only for local-only debugging. |
-| `MEMORYDETECTIVE_ALLOW_LAUNCH` | unset | `bootAndLaunchForLeakInvestigation` requires this to be `1` before running `xcodebuild` + `xcrun simctl launch`. Without it the tool returns `ok: false` with `state: "launchNotAllowed"`. |
+| `MEMORYDETECTIVE_ALLOW_LAUNCH` | unset | Boolean. `bootAndLaunchForLeakInvestigation` requires this to be truthy before running `xcodebuild` + `xcrun simctl launch`. Without it the tool returns `ok: false` with `state: "launchNotAllowed"`. |
 | `MEMORYDETECTIVE_MAX_RECORDING_SECONDS` | `300` | Cap on `recordTimeProfile.durationSec`. Raise (max `3600`) when you genuinely need long captures. |
 | `MEMORYDETECTIVE_TRACE_ROOT` | `~/Library/Application Support/memorydetective/traces` | Default directory for `.trace` bundles when `recordTimeProfile.output` is a relative path. Also the default scan path for `cleanupTraces`. |
-| `MEMORYDETECTIVE_ALLOW_EXTERNAL_CLEANUP` | unset | Required to be `1` for `cleanupTraces` to scan/delete outside `MEMORYDETECTIVE_TRACE_ROOT`. Default-deny on destructive disk operations outside the configured boundary. |
-| `MEMORYDETECTIVE_SUPPRESS_PLATFORM_ADVISORY` | unset | Set to `1` once you have an iOS 18 sim runtime installed and no longer need the macOS 26.x reminder banner. |
+| `MEMORYDETECTIVE_ALLOW_EXTERNAL_CLEANUP` | unset | Boolean. Required to be truthy for `cleanupTraces` to scan/delete outside `MEMORYDETECTIVE_TRACE_ROOT`. Default-deny on destructive disk operations outside the configured boundary. |
+| `MEMORYDETECTIVE_SUPPRESS_PLATFORM_ADVISORY` | unset | Boolean. Set once you have an iOS 18 sim runtime installed and no longer need the macOS 26.x reminder banner. Also silences v1.17 stderr warnings for unrecognized boolean values and `schemaDiscovery` TOC fetch failures. |
+| `MEMORYDETECTIVE_AUTO_OPEN_INSTRUMENTS` | unset | Boolean. Makes `recordTimeProfile` open Instruments.app on a timeout (the macOS 26.x regression). v1.17 probes `MANIFEST.plist` before opening so wedged 52K stub bundles do not surface a Document Missing Template Error dialog. |
+| `MEMORYDETECTIVE_PREFLIGHT_XCTRACE` | unset (auto) | Boolean + `auto`. Controls the 2-second pre-flight probe on `recordTimeProfile` that detects the macOS 26.x wedge fast. Auto-enables on macOS 26.x simulator attach; truthy forces on; falsy forces off. |
 
 ## When `captureMemgraph` fails on macOS 26.x
 

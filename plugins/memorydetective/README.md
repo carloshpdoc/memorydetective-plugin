@@ -6,10 +6,10 @@
 
 When installed, this plugin auto-registers the `memorydetective` MCP server and adds a top-level skill:
 
-- **34 MCP tools**: `analyzeMemgraph`, `classifyCycle`, `findRetainers`, `analyzeAbandonedMemory` (v1.9, for the leakCount=0 family), `verifyFix`, `compareTracesByPattern`, `analyzeHangs` (v1.9 ships an optional `mainThreadViolations[]` classifier: sync-io / db-lock / network / lock-contention), `analyzeAnimationHitches`, `analyzeAllocations`, `analyzeAppLaunch`, `analyzeTimeProfile`, `recordTimeProfile`, `captureMemgraph`, `renderCycleGraph`, `cleanupTraces` (v1.9), `detectLeaksInXCTest` (v1.9), `detectLeaksInXCUITest` (both detectLeaks* tools accept `outputHtmlPath` for self-contained HTML reports), the v1.8 verify-fix trio (`bootAndLaunchForLeakInvestigation`, `replayScenario`, `captureScenarioState`) for the macOS 26.x `leaks --outputGraph` regression plus deterministic before/after snapshots, plus 5 SourceKit-LSP-backed Swift source-bridging tools, plus `logShow` / `logStream` for macOS unified logging
+- **41 MCP tools** (memgraph + trace + verify-fix + Swift source bridging + ops). The full list lives in the [memorydetective README](https://github.com/carloshpdoc/memorydetective#api). v1.16 added `recordViaInstrumentsApp` (macOS 26.x escape hatch). v1.15 added three trace tools (`analyzeMemoryFootprint` / `analyzeEnergyImpact` / `analyzeLeakTimeline`). v1.14 added `analyzeNetworkActivity`. v1.13 added `summarizeTrace`. v1.11 added `inspectTrace`. v1.17 is reliability-only (no surface changes, 24 new tests across the audit punch list).
 - **36 cycle patterns** in the classifier: SwiftUI (incl. Swift 6 / `@Observable` / SwiftData / NavigationStack / the v1.9 `observable-write-on-every-render` shape), Combine, Swift Concurrency (incl. AsyncSequence-on-self), UIKit (incl. the v1.9 `viewcontroller-retained-after-pop` shape), Core Animation, Core Data, SwiftData (`ModelContext` + Actor), Coordinator pattern, RxSwift, Realm
-- **Per-classification triple**: every cycle now ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this, or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, new in v1.7)
-- **5 MCP prompts** as slash commands: `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`
+- **Per-classification triple**: every cycle ships `fixHint` (textual direction) + `staticAnalysisHint` (which SwiftLint rule complements this, or explicit gap notice) + `fixTemplate` (Swift before/after code snippet, v1.7+)
+- **6 MCP prompts** as slash commands: `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`, `/summarize-trace`
 - **34 catalog resources** browsable at `memorydetective://patterns/{patternId}`, so an agent can read the catalog without burning a tool call
 - **`/perf-investigate` skill**: disciplined investigation playbook routing to the right tools based on symptoms
 
@@ -20,7 +20,7 @@ When installed, this plugin auto-registers the `memorydetective` MCP server and 
 /plugin install memorydetective@memorydetective-plugin
 ```
 
-That's it. The MCP server is pulled from npm (`memorydetective@^1.13`) on first use.
+That's it. The MCP server is pulled from npm (`memorydetective@^1.17`) on first use.
 
 ## Use
 
@@ -128,7 +128,7 @@ What runs: see the [5-minute CI recipe](https://github.com/carloshpdoc/memorydet
 
 - **Physical iOS device + memgraph:** `leaks(1)` only attaches to local Mac processes (which includes the iOS Simulator). For physical devices, export from Xcode (`Debug > View Memory Graph > File > Export Memory Graph`) and pass the path to `analyzeMemgraph`.
 - **`xctrace` SIGSEGV on heavy traces:** `analyzeTimeProfile` returns a structured workaroundNotice. Open the trace once in Instruments to symbolicate, close it, then retry.
-- **First MCP call feels slow:** `npx -y memorydetective@^1.13` resolves the package on first invocation. Subsequent calls reuse the cached binary.
+- **First MCP call feels slow:** `npx -y memorydetective@^1.17` resolves the package on first invocation. Subsequent calls reuse the cached binary.
 
 ## Requirements
 
@@ -139,7 +139,7 @@ What runs: see the [5-minute CI recipe](https://github.com/carloshpdoc/memorydet
 
 ## Versioning
 
-This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.13` via `npx -y`, so any 1.13.x patch release is auto-resolved on first run.
+This plugin tracks the MCP server's minor version. The `.mcp.json` in this plugin pulls `memorydetective@^1.17` via `npx -y`, so any 1.17.x patch release is auto-resolved on first run.
 
 When the MCP server bumps to a new major (e.g. `2.0.0`), this plugin will publish a matching plugin version with the updated constraint.
 
