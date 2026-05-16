@@ -4,6 +4,20 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.17.0] - 2026-05-16
+
+Tracks `memorydetective@1.17.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.16` to `^1.17`. Server v1.17 is a reliability pass: 14 bug fixes spanning env-var truthy parsing (strtobool set, was `1`-only), `verifyFix` whitelist match modes (exact / substring / regex, was substring-only), Instruments.app AppleScript document query that catches traces saved outside `watchDir`, fault-tolerant `inspectTrace` fallback on wedged 52K bundles, configurable `countAlive` framework-noise filter. Tool surface unchanged (still 41 MCP tools); behavior tightening across the board.
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.16` -> `^1.17`. The `npx -y` resolver auto-pulls `memorydetective@1.17.x`.
+- `.claude-plugin/plugin.json`: version `1.16.0 -> 1.17.0`, description refreshed for v1.17 reliability bullets.
+
+### Notes
+
+- No SKILL.md changes; the v1.10 playbook still applies. New `MEMORYDETECTIVE_*` env-var ergonomics matter for skill authors who tell users `export MEMORYDETECTIVE_ALLOW_LAUNCH=true` (previously a silent no-op, now works).
+- No breaking changes. Re-running `/plugin install memorydetective@memorydetective-plugin` picks up the new constraint.
+
 ## [1.13.0] - 2026-05-14
 
 Tracks `memorydetective@1.13.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.12` to `^1.13`. Server v1.13 adds summarizeTrace (36th MCP tool, single-call cross-schema trace synthesis with pre-rendered markdown card + cross-correlations) and the /summarize-trace MCP prompt (6th prompt).
