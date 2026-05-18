@@ -284,7 +284,7 @@ reliability-only. Highlights to teach the agent:
   new kinds without a type bump. Internal call sites use
   `KnownSupportStatusKind` so typos in inline literals still fail-build.
 
-Plus 6 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`, `/summarize-trace`.
+Plus 7 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`, `/summarize-trace`, `/investigate-metrickit` (v1.18+, post-mortem flow for `.mxdiagnostic` payloads).
 
 Plus 34 catalog resources at `memorydetective://patterns/{patternId}`.
 
