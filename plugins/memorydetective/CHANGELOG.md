@@ -4,6 +4,21 @@ All notable changes to the `memorydetective` Claude Code plugin are recorded her
 
 The plugin tracks the MCP server's minor version. See the [memorydetective CHANGELOG](https://github.com/carloshpdoc/memorydetective/blob/main/CHANGELOG.md) for changes to the underlying server.
 
+## [1.18.0] - 2026-05-17
+
+Tracks `memorydetective@1.18.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.17` to `^1.18`. Server v1.18 ships the **42nd MCP tool** — `analyzeMetricKitPayload`, the post-mortem production-diagnostics lane that ingests Apple MetricKit `.mxdiagnostic` JSON payloads from real-device builds. Alongside it: open-enum SupportStatusKind, schemaDiscovery cache (600-3000ms wall-clock win on `summarizeTrace`), and local-only integration tests against real Apple `.trace` bundles. Tool surface: 41 → 42. Test count: 701 → 757.
+
+### Changed
+
+- `.mcp.json` MCP server constraint: `^1.17` → `^1.18`. The `npx -y` resolver auto-pulls `memorydetective@1.18.x`.
+- `.claude-plugin/plugin.json`: version `1.17.0` → `1.18.0`, description refreshed for v1.18 highlights (MetricKit, audit-close trio).
+
+### Notes
+
+- New tool category in the description: `.mxdiagnostic` files joined `.memgraph` and `.trace` as the third lane the server analyzes. SKILL.md and plugin README updated to teach the agent when to suggest `analyzeMetricKitPayload`.
+- No SKILL.md surface changes beyond the MetricKit additions; the v1.10 playbook still applies.
+- No breaking changes for users. `/plugin install memorydetective@memorydetective-plugin` picks up the new constraint.
+
 ## [1.17.0] - 2026-05-16
 
 Tracks `memorydetective@1.17.0` server release. The plugin's `.mcp.json` constraint bumps from `^1.16` to `^1.17`. Server v1.17 is a reliability pass: 14 bug fixes spanning env-var truthy parsing (strtobool set, was `1`-only), `verifyFix` whitelist match modes (exact / substring / regex, was substring-only), Instruments.app AppleScript document query that catches traces saved outside `watchDir`, fault-tolerant `inspectTrace` fallback on wedged 52K bundles, configurable `countAlive` framework-noise filter. Tool surface unchanged (still 41 MCP tools); behavior tightening across the board.

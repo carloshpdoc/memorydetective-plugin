@@ -25,6 +25,7 @@ Pick the right playbook based on what the user described:
 | "jank", "stutters", "dropped frames", "scroll feels janky", "animation hitches" | **ui-jank** | `analyzeAnimationHitches` |
 | "launch is slow", "cold start", "splash screen", "app takes N seconds to open" | **app-launch-slow** | `analyzeAppLaunch` |
 | "did my fix work?", "verify the cycle is gone", "compare before/after" | **verify-fix** | `diffMemgraphs` + `verifyFix` |
+| "crashed in production", "hangs from real users", ".mxdiagnostic", "MetricKit payload", "TestFlight crash report" | **production-postmortem** | `analyzeMetricKitPayload` |
 | Mixed / unclear | **memgraph-leak first**, then `analyzeHangs` if no leak found | start with what's cheapest to capture |
 
 If the user has a slash command available, you can also invoke the matching MCP prompt directly: `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`. Those prompts fill the canonical playbook with user-provided paths and hand you a ready-to-execute brief.
@@ -133,6 +134,30 @@ For **trace-side** verification (hangs / animation hitches / app launch):
    - `app-launch` PASS when `after.totalMs <= appLaunchMaxTotalMs` (default 1000ms)
 3. **PARTIAL** = reduced from before but still above threshold. **FAIL** = same or worse.
 
+## Playbook F: production-postmortem (v1.18)
+
+**Symptom shape:** "I have crashes / hangs from real production users, not from my sim" / "the user sent me a `.mxdiagnostic` file" / "I want to analyze TestFlight crash payloads."
+
+**Why a separate playbook:** `captureMemgraph` and `recordTimeProfile` are local-capture tools, useless against problems that only happen on real-user devices. MetricKit (Apple's `MXMetricManager`) writes JSON payloads to the app's MetricKit directory on TestFlight / App Store builds, which the dev airdrops to their Mac. This playbook handles that lane.
+
+**Steps:**
+
+1. **`analyzeMetricKitPayload({ payloadPath })`** for a single file, or **`{ payloadDir }`** to aggregate across all `.mxdiagnostic` files in a directory (the typical case — devs accumulate payloads over weeks).
+2. The result has 4 sections; prioritize in this order:
+   - **`crashCluster[]`** — grouped by `groupBy` (default `exception-type`). Each entry has top-frame label + `affectedBuilds[]` so you can spot a regression introduced by a specific build version.
+   - **`hangHotspots[]`** — sorted by `hangDurationMs` (after extracting the leading number from Apple's localized strings like `"5.4 sec"` or `"20秒"`). >1s = user-visible freeze.
+   - **`cpuExceptions[]`** — sorted by `totalCPUTimeMs`. The "your code burned the battery in the background" lane.
+   - **`diskWriteExceptionDiagnostics[]`** — `writesCausedMB` ranked. The "your code wrote 1 GB to disk in one session" lane.
+3. Each entry carries raw `binaryUUID + offsetIntoBinaryTextSegment + binaryName` for downstream dSYM symbolication. We do NOT symbolicate in v1.18.
+4. Follow `result.suggestedNextCalls`:
+   - Retain-cycle-shaped top frame (`_objc_release`, `objc_msgSend`, `_dispatch_block_invoke`) → suggests `findCycles` on a memgraph of the same code path.
+   - SQLite / network / lock top frame → suggests `analyzeHangs` with `includeStackClassification` against a trace of a repro scenario.
+
+**What MetricKit does NOT cover:**
+
+- Simulator builds. Apple does not generate `.mxdiagnostic` from the sim. This is local-only data from real devices.
+- iOS 18 has a 24-48h delivery delay and a "new bundle id probation" window. Tool surfaces `payloadCount: 0` honestly when the directory is empty — do not invent diagnoses.
+
 ## Common pitfalls: don't fall into these
 
 - **`captureMemgraph` on physical iOS devices.** Doesn't work. `leaks(1)` is Mac-only. Use Xcode's Memory Graph Debugger button + File → Export.
@@ -195,7 +220,23 @@ Discover (3)
 
 Synthesize (1, v1.13)
   summarizeTrace (single-call cross-schema synthesis with pre-rendered
-  markdown card; v1.15 chains analyzeNetworkActivity)
+  markdown card; v1.15 chains analyzeNetworkActivity; v1.18 D-02:
+  schemaDiscovery cache shaves 600-3000ms wall-clock vs v1.17)
+
+Production diagnostics (1, v1.18)
+  analyzeMetricKitPayload (42nd tool, [mg.production]). Post-mortem
+  ingest of Apple MetricKit .mxdiagnostic JSON payloads from real-device
+  TestFlight / App Store builds. Three input forms: payloadPath
+  (single file), payloadDir (aggregate across all .mxdiagnostic files
+  in a directory), payloadJson (raw, for in-memory callers). Outputs
+  crashCluster (groupBy: "exception-type" | "binary" | "top-frame"),
+  hangHotspots (with localized-duration parsing: "5.4 sec" / "20秒"),
+  cpuExceptions, diskWriteExceptions. NO symbolication in v1 — ship
+  raw binaryUUID + offsetIntoBinaryTextSegment. Simulator does NOT
+  generate MetricKit (Apple-side); frame as post-mortem analyzer.
+  Cross-tool chain hints: objc_release-style top frame → findCycles
+  hint; sqlite top frame → analyzeHangs with mainThreadViolations
+  classifier.
 
 Render (1)
   renderCycleGraph (Mermaid + Graphviz DOT)
@@ -218,8 +259,10 @@ Pipeline awareness (1, meta)
   getInvestigationPlaybook
 ```
 
-41 MCP tools total. v1.17 is reliability-only (no new tool, no surface
-removals). Highlights to teach the agent:
+42 MCP tools total. v1.18 added analyzeMetricKitPayload (production
+post-mortem lane) + audit-close trio (open-enum SupportStatusKind +
+schemaDiscovery cache + real-Apple integration tests). v1.17 was
+reliability-only. Highlights to teach the agent:
 - `verifyFix.expectedAliveClasses` accepts per-entry { pattern, mode } where
   mode is "exact" | "substring" | "regex" (v1.17). Bare strings still mean
   substring for backwards compat.
@@ -229,6 +272,17 @@ removals). Highlights to teach the agent:
 - Variable-size classes (NSData, NSString, CFData) report
   `instanceSizeBytesMin / Max / Median` (v1.17). Fixed-size classes still
   report a single `instanceSizeBytes` value.
+- `analyzeMetricKitPayload` (v1.18) is the right tool when the user has
+  `.mxdiagnostic` files from TestFlight / App Store. Distinct from
+  `captureMemgraph` (local capture) and `recordTimeProfile` (local CLI
+  recording). Inputs: payloadPath (single file), payloadDir (aggregate),
+  or payloadJson (raw). Cross-tool chain hints fire automatically:
+  retain-cycle-shaped top frames suggest `findCycles`; sqlite / network /
+  lock top frames suggest `analyzeHangs` with `includeStackClassification`
+  on the corresponding trace.
+- `SupportStatusKind` is open (v1.18 D-01). Downstream code can author
+  new kinds without a type bump. Internal call sites use
+  `KnownSupportStatusKind` so typos in inline literals still fail-build.
 
 Plus 6 MCP prompts (slash commands): `/investigate-leak`, `/investigate-hangs`, `/investigate-jank`, `/investigate-launch`, `/verify-cycle-fix`, `/summarize-trace`.
 
